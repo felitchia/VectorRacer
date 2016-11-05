@@ -3,7 +3,6 @@
 (load "datastructures.fas")
 (load "auxfuncs.fas")
 
-
 ;;; TAI position
 (defun make-pos (c l)
   (list c l))
@@ -81,21 +80,56 @@
      (nbract (length actionlist))
      (stts (make-list nbract :initial-element st)))
   (mapcar #'nextState stts actionlist)))
-  ;(states-to-list (mapcar #'nextState stts actionlist))))
-	;(dotimes (action (length actionlist))
-	;	(setf auxstate (nextState st action))
-	;	(append auxstate nextsts))
-	;(states-to-list nextsts)))
-	
 
-
+´;;;returns a list with nodes whose parent is parent
+(defun setParents (parent nodes)
+  (let* ((lengthNode (length nodes))
+    (parents (make-list lengthNode :initial-element parent)))
+  (mapcar #'make-node :state nodes :parent parents)))
+)
 ;;; limdepthfirstsearch 
 (defun limdepthfirstsearch (problem lim &key cutoff?)
   "limited depth first search
      st - initial state
      problem - problem information
      lim - depth limit"
-	(list (make-node :state (problem-initial-state problem))) )
+	;(list (make-node :state (problem-initial-state problem))) 
+    (let* ((node (make-node :state (problem-initial-state problem)))
+        (chosen (list node)) 
+        (expanded '())
+        (generated '())
+        (depth 0)
+        (cuttoff nil))
+      (block depthsearch
+        (while (not (equal chosen nil))
+          (push expanded node)
+          (if (isGoalp node-state)
+            (return-from depthsearch chosen)
+            (progn
+              (pop generated)
+              (if (<= depth lim)
+                (progn
+                  (append (setParents (nextStates node-state)) generated)
+                  (pop expanded)
+                  (append chosen (list node))
+                  (append expanded (list node))
+                  (setf depth (1+ depth)))
+                (progn 
+                  (setf cutoff t)
+                  (while (not (equal (node-parent) (last chosen)))
+                    (progn 
+                      (remove chosen :from-end t)
+                      (setf depth (1- depth))          
+                )
+                        
+              )
+            )
+
+          );close if(<= depth)
+          (setf node (first generated)) 
+    )
+
+  )
 				      
 
 ;iterlimdepthfirstsearch
