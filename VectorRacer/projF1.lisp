@@ -1,6 +1,6 @@
 
 ;;; this is your solution file
-(load "SolF1.lisp")
+(load "SolF2.lisp")
 
 (defun state-to-str (st)
   (format nil "Pos:~a Vel:~a Action:~a Cost:~a" 
