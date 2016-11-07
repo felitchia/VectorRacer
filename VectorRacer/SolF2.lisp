@@ -122,7 +122,7 @@
 				(return-from depthsearch (nodeToState chosen))
 					(progn
 					  (pop generated)
-					  (if (>= depth lim)
+					  (if (> depth lim)
 						(progn
 							(append (setParents node (nextStates (node-state node))) generated)   
 							(pop expanded)
@@ -142,9 +142,10 @@
 					  (setf node (first generated)) 
 					)
 				)
+			;(format t (state-track (node-state node)))
 			)
 		)
-		(if (equal cuttoff t) ':corte
+		(if (equal cuttoff t) '":corte"
 		nil)
 	)
 )
