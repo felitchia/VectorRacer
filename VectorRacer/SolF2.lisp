@@ -1,7 +1,7 @@
-;(load "datastructures.lisp")
-;(load "auxfuncs.lisp")
-(load "datastructures.fas")
-(load "auxfuncs.fas")
+(load "datastructures.lisp")
+(load "auxfuncs.lisp")
+; (load "datastructures.fas")
+; (load "auxfuncs.fas")
 
 ;;; TAI position
 (defun make-pos (c l)
@@ -81,55 +81,73 @@
      (stts (make-list nbract :initial-element st)))
   (mapcar #'nextState stts actionlist)))
 
-´;;;returns a list with nodes whose parent is parent
+;;;returns a list with nodes whose 'parent' is parent
+; (defun setParents (parent nodes)
+  ; (let* ((lengthNode (length nodes))
+    ; (parents (make-list lengthNode :initial-element parent)))
+  ; (mapcar #'make-node :state nodes :parent parents)))
+
 (defun setParents (parent nodes)
-  (let* ((lengthNode (length nodes))
-    (parents (make-list lengthNode :initial-element parent)))
-  (mapcar #'make-node :state nodes :parent parents)))
+  (let ((lengthNode (length nodes))
+		(retlist '()))
+		(dolist (no nodes)
+			(make-node :parent parent :state no)
+			(append retlist no))
+	)
 )
+ 
+(defun nodeToState (chosen)
+	(let ((states '()))
+		(dolist (chs chosen)
+			(append states (node-state chs)))
+	(format t states)
+	)
+)
+				 
 ;;; limdepthfirstsearch 
 (defun limdepthfirstsearch (problem lim &key cutoff?)
   "limited depth first search
      st - initial state
      problem - problem information
      lim - depth limit"
-	;(list (make-node :state (problem-initial-state problem))) 
     (let* ((node (make-node :state (problem-initial-state problem)))
         (chosen (list node)) 
-        (expanded '())
+        (expanded (list node))
         (generated '())
         (depth 0)
         (cuttoff nil))
       (block depthsearch
-        (while (not (equal chosen nil))
-          (push expanded node)
-          (if (isGoalp node-state)
-            (return-from depthsearch chosen)
-            (progn
-              (pop generated)
-              (if (<= depth lim)
-                (progn
-                  (append (setParents (nextStates node-state)) generated)
-                  (pop expanded)
-                  (append chosen (list node))
-                  (append expanded (list node))
-                  (setf depth (1+ depth)))
-                (progn 
-                  (setf cutoff t)
-                  (while (not (equal (node-parent) (last chosen)))
-                    (progn 
-                      (remove chosen :from-end t)
-                      (setf depth (1- depth))          
-                )
-                        
-              )
-            )
-
-          );close if(<= depth)
-          (setf node (first generated)) 
-    )
-
-  )
+        (when (not (equal chosen nil))
+			  (if (isGoalp (node-state node))
+				(return-from depthsearch (nodeToState chosen))
+					(progn
+					  (pop generated)
+					  (if (>= depth lim)
+						(progn
+							(append (setParents node (nextStates (node-state node))) generated)   
+							(pop expanded)
+							(append chosen (list node))
+							(append expanded (list node))
+							(setf depth (1+ depth)))
+						(progn 
+						  (setf cutoff t)
+						  (when (not (equal (node-parent node) (last chosen)))
+							(progn 
+								(butlast chosen)   
+							)
+						  )
+							(setf depth (1- depth))
+						)
+					  )
+					  (setf node (first generated)) 
+					)
+				)
+			)
+		)
+		(if (equal cuttoff t) ':corte
+		nil)
+	)
+)
 				      
 
 ;iterlimdepthfirstsearch
