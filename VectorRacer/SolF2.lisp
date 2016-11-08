@@ -92,7 +92,6 @@
 		(newnode nil))
 		(dolist (no nodes)
 			(setf newnode (make-node :parent parent :state no))
-			(format t '"NEWNODE")
 			(setf retlist (append retlist (list newnode))))
 	retlist)
 )
@@ -121,50 +120,49 @@
         (depth 0)
         (cuttoff nil))
       (block depthsearch
-        (when (not (equal chosen nil))
-			(format t '"chosen: ")
-			(print-elements-of-list chosen)
-			  (if (isGoalp (node-state node))
-				(return-from depthsearch (nodeToState chosen))
-					(progn
-						(pop generated)
-						(if (<= depth lim)
-							(progn
-								(setf generated (append (setParents node (nextStates (node-state node))) generated))
-								(format t '"LENGTH OF GENERATED")
-								(print (length generated))
-								(pop expanded)
-								(setf chosen (append chosen (list node)))
-								(format t '"LENGTH OF CHOSEN")
-								(print (length chosen))
-								(setf expanded (append expanded (list node)))
-								(setf depth (1+ depth))
-								(format t '"LIM")
-								(print lim)
-								(format t '"DEPTH")
-								(print depth))
-						(progn 
-						  (setf cutoff t)
-						  (when (not (equal (node-parent node) (last chosen)))
+			(loop 
+				(if (isGoalp (node-state node))
+					(return-from depthsearch (nodeToState chosen))
+						(progn
+							(pop generated)
+							(if (< depth lim)
+								(progn
+									(setf generated (append (setParents node (nextStates (node-state node))) generated))
+									(format t '"LENGTH OF GENERATED")
+									(print (length generated))
+									(pop expanded)
+									(setf node (first generated)) 
+									(setf chosen (append chosen (list node)))
+									; (format t '"LENGTH OF CHOSEN")
+									; (print (length chosen))
+									(setf expanded (append expanded (list node)))
+									(setf depth (1+ depth))
+									; (format t '"LIM")
+									; (print lim)
+									; (format t '"DEPTH")
+									; (print depth)
+								)
 							(progn 
-								(setf chosen(butlast chosen))   
+								(setf cutoff t)
+								;ESTE WHEN TEM DE PASSAR A CICLO
+								(when (not (equal (node-parent node) (last chosen)))
+									(progn 
+										(setf chosen(butlast chosen))
+										(setf node (first generated))    
+									)
+								)
+									(setf depth (1- depth))
 							)
-						  )
-							(setf depth (1- depth))
 						)
-					  )
-					  (setf node (first generated)) 
 					)
 				)
+				(when (equal chosen nil)
+					(cond ((equal cuttoff t) "~%:corte")
+					(t nil)))
 			)
-			(format t '"CHOSEN")
-			(print chosen)
-		)
-		(cond ((equal cuttoff t) "~%:corte")
-				(t nil))
+		)	
 	)
 )
-				      
 
 ;iterlimdepthfirstsearch
 (defun iterlimdepthfirstsearch (problem &key (lim most-positive-fixnum))
@@ -173,4 +171,3 @@
      problem - problem information
      lim - limit of depth iterations"
 	(list (make-node :state (problem-initial-state problem))) )
-
