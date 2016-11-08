@@ -107,6 +107,14 @@
 	(dolist (x thislist)
 		(print x)))
 	
+(defun removenotparents(parent chosen)
+	(loop 
+		(when  (or (equal parent (last chosen)) (equal chosen nil))
+			chosen)
+		(setf chosen(butlast chosen))
+	)
+)
+
 ;;; limdepthfirstsearch 
 (defun limdepthfirstsearch (problem lim &key cutoff?)
   "limited depth first search
@@ -144,14 +152,10 @@
 								)
 							(progn 
 								(setf cutoff t)
-								;ESTE WHEN TEM DE PASSAR A CICLO
-								(when (not (equal (node-parent node) (last chosen)))
-									(progn 
-										(setf chosen(butlast chosen))
-										(setf node (first generated))    
-									)
-								)
-									(setf depth (1- depth))
+								;ESTE CICLO ESTÁ A DAR STRESSES
+								(setf chosen (removenotparents (node-parent node) chosen))
+								(setf node (first generated))    
+								(setf depth (1- depth))
 							)
 						)
 					)
