@@ -88,22 +88,26 @@
   ; (mapcar #'make-node :state nodes :parent parents)))
 
 (defun setParents (parent nodes)
-  (let ((lengthNode (length nodes))
-		(retlist '()))
+  (let ((retlist '())
+		(newnode nil))
 		(dolist (no nodes)
-			(make-node :parent parent :state no)
-			(append retlist no))
-	)
+			(setf newnode (make-node :parent parent :state no))
+			(format t '"NEWNODE")
+			(setf retlist (append retlist (list newnode))))
+	retlist)
 )
  
 (defun nodeToState (chosen)
 	(let ((states '()))
 		(dolist (chs chosen)
-			(append states (node-state chs)))
-	(format t states)
-	)
+			(setf states(append states (list (node-state chs)))))
+	states)
 )
-				 
+		
+(defun print-elements-of-list (thislist)
+	(dolist (x thislist)
+		(print x)))
+	
 ;;; limdepthfirstsearch 
 (defun limdepthfirstsearch (problem lim &key cutoff?)
   "limited depth first search
@@ -118,22 +122,32 @@
         (cuttoff nil))
       (block depthsearch
         (when (not (equal chosen nil))
+			(format t '"chosen: ")
+			(print-elements-of-list chosen)
 			  (if (isGoalp (node-state node))
 				(return-from depthsearch (nodeToState chosen))
 					(progn
-					  (pop generated)
-					  (if (> depth lim)
-						(progn
-							(append (setParents node (nextStates (node-state node))) generated)   
-							(pop expanded)
-							(append chosen (list node))
-							(append expanded (list node))
-							(setf depth (1+ depth)))
+						(pop generated)
+						(if (<= depth lim)
+							(progn
+								(setf generated (append (setParents node (nextStates (node-state node))) generated))
+								(format t '"LENGTH OF GENERATED")
+								(print (length generated))
+								(pop expanded)
+								(setf chosen (append chosen (list node)))
+								(format t '"LENGTH OF CHOSEN")
+								(print (length chosen))
+								(setf expanded (append expanded (list node)))
+								(setf depth (1+ depth))
+								(format t '"LIM")
+								(print lim)
+								(format t '"DEPTH")
+								(print depth))
 						(progn 
 						  (setf cutoff t)
 						  (when (not (equal (node-parent node) (last chosen)))
 							(progn 
-								(butlast chosen)   
+								(setf chosen(butlast chosen))   
 							)
 						  )
 							(setf depth (1- depth))
@@ -142,11 +156,12 @@
 					  (setf node (first generated)) 
 					)
 				)
-			;(format t (state-track (node-state node)))
 			)
+			(format t '"CHOSEN")
+			(print chosen)
 		)
-		(if (equal cuttoff t) '":corte"
-		nil)
+		(cond ((equal cuttoff t) "~%:corte")
+				(t nil))
 	)
 )
 				      

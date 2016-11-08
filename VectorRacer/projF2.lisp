@@ -92,16 +92,16 @@
 		(/ (- real2 real1) internal-time-units-per-second))))
   
 
-(print "Exercise 2.3 - iterlimdepthfirstsearch")
-(let ((real1 (get-internal-real-time)))
+; (print "Exercise 2.3 - iterlimdepthfirstsearch")
+; (let ((real1 (get-internal-real-time)))
 
-	(with-open-file (str "out2.3.txt"
-			 :direction :input)
-	  (format t "~% Solution is correct? ~a" (equal (states-to-list  (iterlimdepthfirstsearch *p1*)) (read str))))
+	; (with-open-file (str "out2.3.txt"
+			 ; :direction :input)
+	  ; (format t "~% Solution is correct? ~a" (equal (states-to-list  (iterlimdepthfirstsearch *p1*)) (read str))))
 	
-    (let ((real2 (get-internal-real-time)))
-	(format t "~%Computation took: ~f seconds of real time~%"
-		(/ (- real2 real1) internal-time-units-per-second))))						 
+    ; (let ((real2 (get-internal-real-time)))
+	; (format t "~%Computation took: ~f seconds of real time~%"
+		; (/ (- real2 real1) internal-time-units-per-second))))						 
 
 		
 (setf (track-startpos *track*) '(2 15))
@@ -121,14 +121,14 @@
 		(/ (- real2 real1) internal-time-units-per-second))))
   
 
-(print "Exercise 2.3b - iterlimdepthfirstsearch")
-(let ((real1 (get-internal-real-time)))
+; (print "Exercise 2.3b - iterlimdepthfirstsearch")
+; (let ((real1 (get-internal-real-time)))
 
-	(with-open-file (str "out2.3b.txt"
-			 :direction :input)
-	  (format t "~% Solution is correct? ~a" (equal (states-to-list  (iterlimdepthfirstsearch *p1*)) (read str))))
+	; (with-open-file (str "out2.3b.txt"
+			 ; :direction :input)
+	  ; (format t "~% Solution is correct? ~a" (equal (states-to-list  (iterlimdepthfirstsearch *p1*)) (read str))))
 	
-    (let ((real2 (get-internal-real-time)))
-	(format t "~%Computation took: ~f seconds of real time~%"
-		(/ (- real2 real1) internal-time-units-per-second))))	    
+    ; (let ((real2 (get-internal-real-time)))
+	; (format t "~%Computation took: ~f seconds of real time~%"
+		; (/ (- real2 real1) internal-time-units-per-second))))	    
  
