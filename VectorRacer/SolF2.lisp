@@ -108,61 +108,63 @@
 		(print x)))
 	
 (defun removenotparents(parent chosen)
-	(loop 
-		(when  (or (equal parent (last chosen)) (equal chosen nil))
-			chosen)
-		(setf chosen(butlast chosen))
-	)
+	(when  (not(or (equal parent (last chosen)) (equal chosen nil)))
+		(setf chosen (removenotparents parent (butlast chosen)))
+		(format t "REMOVE"))
 )
 
 ;;; limdepthfirstsearch 
-(defun limdepthfirstsearch (problem lim &key cutoff?)
+(defun limdepthfirstsearch (problem lim)
   "limited depth first search
      st - initial state
      problem - problem information
      lim - depth limit"
-    (let* ((node (make-node :state (problem-initial-state problem)))
+    (let* ((node (make-node :state goal-state))
         (chosen (list node)) 
         (expanded (list node))
         (generated '())
         (depth 0)
         (cuttoff nil))
-      (block depthsearch
-			(loop 
-				(if (isGoalp (node-state node))
-					(return-from depthsearch (nodeToState chosen))
-						(progn
-							(pop generated)
-							(if (< depth lim)
-								(progn
-									(setf generated (append (setParents node (nextStates (node-state node))) generated))
-									(format t '"LENGTH OF GENERATED")
-									(print (length generated))
-									(pop expanded)
-									(setf node (first generated)) 
-									(setf chosen (append chosen (list node)))
-									; (format t '"LENGTH OF CHOSEN")
-									; (print (length chosen))
-									(setf expanded (append expanded (list node)))
-									(setf depth (1+ depth))
-									; (format t '"LIM")
-									; (print lim)
-									; (format t '"DEPTH")
-									; (print depth)
-								)
-							(progn 
-								(setf cutoff t)
-								;ESTE CICLO ESTÁ A DAR STRESSES
-								(setf chosen (removenotparents (node-parent node) chosen))
-								(setf node (first generated))    
-								(setf depth (1- depth))
+		(loop 
+			(if (funcall (problem-fn-isGoal problem) (node-state node))
+				(return (nodeToState chosen))
+					(progn
+						(pop generated)
+						(if (< depth lim)
+							(progn
+								(setf generated (append (setParents node (funcall (problem-fn-nextStates problem) (node-state node))) generated))
+								(format t '"LENGTH OF GENERATED")
+								(print (length generated))
+								(format t '"IF")
+								(pop expanded)
+								(setf node (first generated)) 
+								(setf chosen (append chosen (list node)))
+								; (format t '"LENGTH OF CHOSEN")
+								; (print (length chosen))
+								(setf expanded (append expanded (list node)))
+								(setf depth (1+ depth))
+								; (format t '"LIM")
+								; (print lim)
+								(format t '"DEPTH")
+								(print depth)
 							)
+						(progn 
+							(setf cutoff t)
+							;ESTE CICLO ESTA A DAR STRESSES
+							(setf node (first generated))    
+							(setf chosen (removenotparents (node-parent node) chosen))
+							(setf depth (length chosen))
+							(format t "ELSE")
+							(print depth)
+							
 						)
 					)
 				)
-				(when (equal chosen nil)
-					(cond ((equal cuttoff t) "~%:corte")
-					(t nil)))
+			)
+			(when (equal chosen nil)
+				(cond ((equal cuttoff t) return :corte)
+					(t (return nil))
+				)
 			)
 		)	
 	)
