@@ -1,7 +1,7 @@
 (load "datastructures.lisp")
 (load "auxfuncs.lisp")
-; (load "datastructures.fas")
-; (load "auxfuncs.fas")
+;(load "datastructures.fas")
+;(load "auxfuncs.fas")
 
 ;;; TAI position
 (defun make-pos (c l)
@@ -81,37 +81,39 @@
      (stts (make-list nbract :initial-element st)))
   (mapcar #'nextState stts actionlist)))
 
-;;;returns a list with nodes whose 'parent' is parent
-; (defun setParents (parent nodes)
-  ; (let* ((lengthNode (length nodes))
-    ; (parents (make-list lengthNode :initial-element parent)))
-  ; (mapcar #'make-node :state nodes :parent parents)))
-
-(defun setParents (parent nodes)
+(defun childNodes (parent nodes)
   (let ((retlist '())
-		(newnode nil))
-		(dolist (no nodes)
-			(setf newnode (make-node :parent parent :state no))
-			(setf retlist (append retlist (list newnode))))
-	retlist)
+    (newnode nil))
+    (dolist (no nodes)
+      (setf newnode (make-node :parent parent :state no))
+      (setf retlist (append retlist (list newnode))))
+  retlist)
 )
- 
-(defun nodeToState (chosen)
-	(let ((states '()))
-		(dolist (chs chosen)
-			(setf states(append states (list (node-state chs)))))
-	states)
+
+(defun recursive-ldfs (problem lim node)
+  (let   ( (cutoff? "")
+          (result nil))
+    (cond 
+      ((funcall (problem-fn-isGoal problem) (node-state node)) (return-from recursive-ldfs (list (node-state node) )))
+      ((zerop lim) (return-from recursive-ldfs ':corte))
+      (t (setf cutoff? nil)
+            (dolist (child (childNodes node (funcall (problem-fn-nextStates problem) (node-state node)) ) )
+            (progn
+				(setf result (recursive-ldfs problem (- lim 1) child) )
+				(cond ((equalp result ':corte) (setf cutoff? t)) 
+					((not (equal result nil)) (return-from recursive-ldfs (append (list (node-state node)) result)))
+
+            )
+          ))
+          (if (equal cutoff? t) (return-from recursive-ldfs ':corte)
+								(return-from recursive-ldfs nil)
+	))
+    )
+  )
 )
-		
-(defun print-elements-of-list (thislist)
-	(dolist (x thislist)
-		(print x)))
-	
-(defun removenotparents(parent chosen)
-	(when  (not(or (equal parent (last chosen)) (equal chosen nil)))
-		(setf chosen (removenotparents parent (butlast chosen)))
-		(format t "REMOVE"))
-)
+
+; (defun cutoff? (result)
+;   (if (string-equal result ":cutoff") t nil))
 
 ;;; limdepthfirstsearch 
 (defun limdepthfirstsearch (problem lim)
@@ -119,61 +121,26 @@
      st - initial state
      problem - problem information
      lim - depth limit"
-    (let* ((node (make-node :state goal-state))
-        (chosen (list node)) 
-        (expanded (list node))
-        (generated '())
-        (depth 0)
-        (cuttoff nil))
-		(loop 
-			(if (funcall (problem-fn-isGoal problem) (node-state node))
-				(return (nodeToState chosen))
-					(progn
-						(pop generated)
-						(if (< depth lim)
-							(progn
-								(setf generated (append (setParents node (funcall (problem-fn-nextStates problem) (node-state node))) generated))
-								(format t '"LENGTH OF GENERATED")
-								(print (length generated))
-								(format t '"IF")
-								(pop expanded)
-								(setf node (first generated)) 
-								(setf chosen (append chosen (list node)))
-								; (format t '"LENGTH OF CHOSEN")
-								; (print (length chosen))
-								(setf expanded (append expanded (list node)))
-								(setf depth (1+ depth))
-								; (format t '"LIM")
-								; (print lim)
-								(format t '"DEPTH")
-								(print depth)
-							)
-						(progn 
-							(setf cutoff t)
-							;ESTE CICLO ESTA A DAR STRESSES
-							(setf node (first generated))    
-							(setf chosen (removenotparents (node-parent node) chosen))
-							(setf depth (length chosen))
-							(format t "ELSE")
-							(print depth)
-							
-						)
-					)
-				)
-			)
-			(when (equal chosen nil)
-				(cond ((equal cuttoff t) return :corte)
-					(t (return nil))
-				)
-			)
-		)	
-	)
+  ;(list (make-node :state (problem-initial-state problem))) 
+  (let ((node (make-node :state (problem-initial-state problem))))
+  (return-from limdepthfirstsearch (recursive-ldfs problem lim node)))
 )
 
+
+
+
 ;iterlimdepthfirstsearch
-(defun iterlimdepthfirstsearch (problem &key (lim most-positive-fixnum))
+(defun iterlimdepthfirstsearch (problem)
   "limited depth first search
      st - initial state
      problem - problem information
      lim - limit of depth iterations"
-	(list (make-node :state (problem-initial-state problem))) )
+	(let ((result '())
+			(iterator 0))
+		(loop
+			(setf result (limdepthfirstsearch problem iterator))
+			(if (not(equal ':corte result)) (return-from iterlimdepthfirstsearch result)
+											(setf iterator(1+ iterator)))
+		)
+	)
+)
