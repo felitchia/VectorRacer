@@ -73,24 +73,56 @@
 ;;; Pedir 
 (defun nextStates (st)
   "generate all possible next states"
-	(list st))
+  (let ((successors nil))
+    (dolist (act (possible-actions) successors)
+      (let ((new-state (nextState st act)))
+	(if (not (member new-state successors :test #'equalp))
+	    (push new-state successors))))))
 
 ;;; limdepthfirstsearch 
-(defun limdepthfirstsearch (problem lim)
+(defun limdepthfirstsearch (problem lim &key cutoff?)
   "limited depth first search
      st - initial state
      problem - problem information
      lim - depth limit"
-	(list (make-node :state (problem-initial-state problem))) )
+  (labels ((limdepthfirstsearch-aux (node problem lim)
+	     (if (isGoalp (node-state node))
+		 (solution node)
+		 (if (zerop lim)
+		     :cutoff
+		     (let ((cutoff? nil))
+		       (dolist (new-state (nextStates (node-state node)))
+			 (let* ((new-node (make-node :parent node :state new-state))
+				(res (limdepthfirstsearch-aux new-node problem (1- lim))))
+			   (if (eq res :cutoff)
+			       (setf cutoff? :cutoff)
+			       (if (not (null res))
+				   (return-from limdepthfirstsearch-aux res)))))
+		       (values cutoff?))))))
+    (let ((res (limdepthfirstsearch-aux (make-node :parent nil :state (problem-initial-state problem))
+					problem
+					lim)))
+      (if (eq res :cutoff)
+	  (if cutoff?
+	      :cutoff
+	      nil)
+	  res))))
 				      
 
 ;iterlimdepthfirstsearch
-(defun iterlimdepthfirstsearch (problem)
+(defun iterlimdepthfirstsearch (problem &key (lim most-positive-fixnum))
   "limited depth first search
      st - initial state
      problem - problem information
      lim - limit of depth iterations"
-	(list (make-node :state (problem-initial-state problem))) )
+  (let ((i 0))
+    (loop
+      (let ((res (limdepthfirstsearch problem i :cutoff? T)))
+	(when (and res (not (eq res :cutoff)))
+	  (return res))
+	(incf i)
+	(if (> i lim)
+	    (return nil))))))
 	
 
 (defun isEndPoint (pos track)
@@ -126,7 +158,129 @@
 		)
 	env)
 )
-	    
+
+
 ;;; A*
 (defun a* (problem)
-  (list (make-node :state (problem-initial-state problem))))
+		;recebe problema (initial-state, fn-nextStates, fn-isGoal, fn-h)
+		;devolve lista de estados de inicial ao objectivo ou NIL cc
+		;estrutura node (parent, state, f, g, h)
+		
+		; initialize the open list
+		; initialize the closed list
+		; put the starting node on the open list (you can leave its f at zero)
+
+		; while the open list is not empty
+			; find the node with the least f on the open list, call it "q"
+			; pop q off the open list
+			; generate q's 8 successors and set their parents to q
+			; for each successor
+				; if successor is the goal, stop the search
+				; successor.g = q.g + distance between successor and q
+				; successor.h = distance from goal to successor
+				; successor.f = successor.g + successor.h
+
+				; if a node with the same position as successor is in the OPEN list \
+					; which has a lower f than successor, skip this successor
+				; if a node with the same position as successor is in the CLOSED list \ 
+					; which has a lower f than successor, skip this successor
+				; otherwise, add the node to the open list
+			; end
+			; push q on the closed list
+		; end
+		
+		
+	(let* ((node (make-node :state (problem-initial-state problem) :g 0))
+		 (closedlist nil)
+		 (openlist (list node))
+		 (generated nil))
+
+		(block a*-loop
+			(setf (node-h node) (funcall (problem-fn-h problem) (node-state node)))
+			(setf (node-f node) (node-h node))
+			(loop 
+				(when (equal openlist nil) (return-from a*-loop nil))
+				(setf node (find-lowest-f openlist))
+				;(print 'OPENLIST_2____________________)
+				;(print openlist)
+				(setf openlist (remove node openlist))
+				(if (funcall (problem-fn-isGoal problem) (node-state node)) 
+					(return-from a*-loop (solution node)))
+				(push node closedlist)
+				(setf generated (childNodes node (funcall (problem-fn-nextStates problem) (node-state node)) problem))
+				;(print 'OPENLIST_1____________________)
+				;(print openlist)
+				(dolist (child generated)
+					;quando o estado do chlild não está na lista de abertos nem fechados adicionamos esse nó na lista de abertos
+					(when (or (not (member (node-state child) (mapcar #'node-state openlist))) (not (member (node-state child) (mapcar #'node-state closedlist))))
+						(setf openlist (append openlist (list child)))
+					)
+					(dolist (auxnode openlist) 
+						;se o estado de child já estiver na lista de abertos com um f maior, então substituimos esse nó na lista de abertos pelo child
+						(when (and (equal (node-state child) (node-state auxnode)) (> (node-f auxnode) (node-f child)))
+							(setf openlist (substitute child auxnode openlist))
+						)
+					)
+				)
+
+			)	
+		)
+	)
+)
+
+
+(defun find-lowest-f (a*list)
+	(let ((f (node-f (first a*list)))
+		  (node (first a*list)))
+		(dolist (el a*list)
+			(if (< (node-f el) f)
+					(progn
+						(setf f (node-f el))
+						(setf node el)
+					)
+			)
+		)
+	node)
+)
+
+(defun childNodes (parent nodes problem)
+  (let ((retlist '())
+    (newnode nil))
+    (dolist (no nodes)
+		(setf newnode (make-node :parent parent :state no))
+		(setf (node-h newnode) (funcall (problem-fn-h problem) (node-state newnode)))
+		(setf (node-g newnode) (+ (getCost (node-state newnode) problem) (node-g parent)))
+		(setf (node-f newnode) (+ (node-h newnode) (node-g newnode)))
+		(setf retlist (append retlist (list newnode)))
+	)
+  retlist)
+)
+
+(defun getCost (st problem)
+	(let ((cost 0))
+		(cond 
+			((isObstaclep (state-pos st) (state-track st))(setf cost 20))
+			((funcall(problem-fn-isGoal problem) st)(setf cost -100))
+			(t (setf cost 1))
+		)
+	cost)
+)
+
+(defun solution (node)
+  (let ((seq-states nil))
+    (loop 
+      (when (null node)
+	(return))
+      (push (node-state node) seq-states)
+      (setf node (node-parent node)))
+    (values seq-states)
+	)
+)
+
+(defun checklist (openlist closedlist generated)
+	(let ((newlist generated))
+		(dolist (el generated)
+			(if (or (not (member el openlist)) (not (member el closedlist))) (remove el newlist))
+		)
+	newlist)
+)
