@@ -1,5 +1,8 @@
-(load "datastructures.lisp")
-(load "auxfuncs.lisp")
+; (load "datastructures.lisp")
+; (load "auxfuncs.lisp")
+(load "datastructures.fas")
+(load "auxfuncs.fas")
+
 
 
 ;;; TAI position
@@ -131,32 +134,21 @@
 ;; Solution of phase 3
 
 ;; Heuristic
-(defun compute-heuristic (st)
-	(let ((env (heuristic-env (state-track st))))
-	(nth (second (state-pos st)) (nth (first (state-pos st)) env )))
-)	
-	 
-(defun heuristic-env (track)
-	(let ((env (track-env track))
-		(x 0)
-		(y 0))
-		(dolist (line env)
-			(progn
-				(dolist (column line)
-					(progn
-						(cond 
-							((isObstaclep (list x y) track) (setf (nth y line) most-positive-fixnum))
-							((isEndPoint (list x y) track) (setf (nth y line) 0))
-							(t (setf (nth y line) (- (second (first (last (track-endpositions track)))) y)))
-						)
-						(incf y)
-					)
+(defun compute-heuristic(st)
+	(let ((dist most-positive-fixnum)
+		(aux 0)
+		(pos (state-pos st)))
+		(if (isObstaclep pos (state-track st)) 
+			most-positive-fixnum
+			(progn 
+				(dolist (endposition (track-endpositions (state-track st)))
+					(setf aux (max (- (first endposition) (first pos)) (- (second endposition) (second pos))))
+					(setf dist (min dist aux))
 				)
-			(setf y 0)
-			(incf x)
+				dist
 			)
 		)
-	env)
+	)
 )
 
 
@@ -206,19 +198,24 @@
 				(setf openlist (remove node openlist))
 				(if (funcall (problem-fn-isGoal problem) (node-state node)) 
 					(return-from a*-loop (solution node)))
-				(push node closedlist)
+				(setf closedlist (append (list node) closedlist))
 				(setf generated (childNodes node (funcall (problem-fn-nextStates problem) (node-state node)) problem))
 				;(print 'OPENLIST_1____________________)
 				;(print openlist)
 				(dolist (child generated)
 					;quando o estado do chlild não está na lista de abertos nem fechados adicionamos esse nó na lista de abertos
 					(when (or (not (member (node-state child) (mapcar #'node-state openlist))) (not (member (node-state child) (mapcar #'node-state closedlist))))
-						(setf openlist (append openlist (list child)))
+						(setf openlist (append (list child)  openlist))
 					)
 					(dolist (auxnode openlist) 
 						;se o estado de child já estiver na lista de abertos com um f maior, então substituimos esse nó na lista de abertos pelo child
-						(when (and (equal (node-state child) (node-state auxnode)) (> (node-f auxnode) (node-f child)))
-							(setf openlist (substitute child auxnode openlist))
+						; (print 'AUXNODE)(print (node-f auxnode))
+						; (print 'CHILD)(print (node-f child))
+						(when (and (eq (node-state child) (node-state auxnode)) (> (node-f auxnode) (node-f child)))
+							(progn (setf openlist (substitute child auxnode openlist))
+								(print 'AUXNODE)(print (node-f auxnode))
+								(print 'CHILD)(print (node-f child))
+							)
 						)
 					)
 				)
