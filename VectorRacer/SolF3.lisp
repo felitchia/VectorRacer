@@ -1,7 +1,7 @@
-; (load "datastructures.lisp")
-; (load "auxfuncs.lisp")
-(load "datastructures.fas")
-(load "auxfuncs.fas")
+(load "datastructures.lisp")
+(load "auxfuncs.lisp")
+; (load "datastructures.fas")
+; (load "auxfuncs.fas")
 
 
 
@@ -142,7 +142,7 @@
 			most-positive-fixnum
 			(progn 
 				(dolist (endposition (track-endpositions (state-track st)))
-					(setf aux (max (- (first endposition) (first pos)) (- (second endposition) (second pos))))
+					(setf aux (max (abs (- (first endposition) (first pos))) (abs (- (second endposition) (second pos)))))
 					(setf dist (min dist aux))
 				)
 				dist
@@ -193,28 +193,20 @@
 			(loop 
 				(when (equal openlist nil) (return-from a*-loop nil))
 				(setf node (find-lowest-f openlist))
-				;(print 'OPENLIST_2____________________)
-				;(print openlist)
 				(setf openlist (remove node openlist))
 				(if (funcall (problem-fn-isGoal problem) (node-state node)) 
 					(return-from a*-loop (solution node)))
-				(setf closedlist (append (list node) closedlist))
+				(setf closedlist (append closedlist (list node)))
 				(setf generated (childNodes node (funcall (problem-fn-nextStates problem) (node-state node)) problem))
-				;(print 'OPENLIST_1____________________)
-				;(print openlist)
 				(dolist (child generated)
-					;quando o estado do chlild não está na lista de abertos nem fechados adicionamos esse nó na lista de abertos
+					;quando o estado do chlild nao esta na lista de abertos nem fechados adicionamos esse no na lista de abertos
 					(when (or (not (member (node-state child) (mapcar #'node-state openlist))) (not (member (node-state child) (mapcar #'node-state closedlist))))
 						(setf openlist (append (list child)  openlist))
 					)
 					(dolist (auxnode openlist) 
-						;se o estado de child já estiver na lista de abertos com um f maior, então substituimos esse nó na lista de abertos pelo child
-						; (print 'AUXNODE)(print (node-f auxnode))
-						; (print 'CHILD)(print (node-f child))
+						;se o estado de child ja estiver na lista de abertos com um f maior, entao substituimos esse no na lista de abertos pelo child
 						(when (and (eq (node-state child) (node-state auxnode)) (> (node-f auxnode) (node-f child)))
 							(progn (setf openlist (substitute child auxnode openlist))
-								(print 'AUXNODE)(print (node-f auxnode))
-								(print 'CHILD)(print (node-f child))
 							)
 						)
 					)
@@ -272,12 +264,4 @@
       (setf node (node-parent node)))
     (values seq-states)
 	)
-)
-
-(defun checklist (openlist closedlist generated)
-	(let ((newlist generated))
-		(dolist (el generated)
-			(if (or (not (member el openlist)) (not (member el closedlist))) (remove el newlist))
-		)
-	newlist)
 )
