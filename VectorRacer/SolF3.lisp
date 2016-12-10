@@ -1,7 +1,9 @@
-(load "datastructures.lisp")
-(load "auxfuncs.lisp")
-; (load "datastructures.fas")
-; (load "auxfuncs.fas")
+;;Ruben Vines - 76991, Felicia Negru - 75655 // Grupo 16
+
+; (load "datastructures.lisp")
+; (load "auxfuncs.lisp")
+(load "datastructures.fas")
+(load "auxfuncs.fas")
 
 
 
@@ -126,62 +128,35 @@
 	(incf i)
 	(if (> i lim)
 	    (return nil))))))
-	
+
 
 (defun isEndPoint (pos track)
 	(integerp (position pos (track-endpositions track) :test #'equal )))
-	
+
 ;; Solution of phase 3
 
 ;; Heuristic
-(defun compute-heuristic(st)
-	(let ((dist most-positive-fixnum)
-		(aux 0)
-		(pos (state-pos st)))
-		(if (isObstaclep pos (state-track st)) 
-			most-positive-fixnum
-			(progn 
-				(dolist (endposition (track-endpositions (state-track st)))
-					(setf aux (max (abs (- (first endposition) (first pos))) (abs (- (second endposition) (second pos)))))
-					(setf dist (min dist aux))
-				)
-				dist
-			)
-		)
-	)
-)
+; (defun compute-heuristic(st)
+	; (let ((dist most-positive-fixnum)
+		; (aux 0)
+		; (pos (state-pos st)))
+		; (if (isObstaclep pos (state-track st)) 
+			; most-positive-fixnum
+			; (progn 
+				; (dolist (endposition (track-endpositions (state-track st)))
+					; (setf aux (max (abs (- (first endposition) (first pos))) (abs (- (second endposition) (second pos)))))
+					; (setf dist (min dist aux))
+				; )
+				; dist
+			; )
+		; )
+	; )
+; )
 
 
 ;;; A*
 (defun a* (problem)
-		;recebe problema (initial-state, fn-nextStates, fn-isGoal, fn-h)
-		;devolve lista de estados de inicial ao objectivo ou NIL cc
-		;estrutura node (parent, state, f, g, h)
-		
-		; initialize the open list
-		; initialize the closed list
-		; put the starting node on the open list (you can leave its f at zero)
 
-		; while the open list is not empty
-			; find the node with the least f on the open list, call it "q"
-			; pop q off the open list
-			; generate q's 8 successors and set their parents to q
-			; for each successor
-				; if successor is the goal, stop the search
-				; successor.g = q.g + distance between successor and q
-				; successor.h = distance from goal to successor
-				; successor.f = successor.g + successor.h
-
-				; if a node with the same position as successor is in the OPEN list \
-					; which has a lower f than successor, skip this successor
-				; if a node with the same position as successor is in the CLOSED list \ 
-					; which has a lower f than successor, skip this successor
-				; otherwise, add the node to the open list
-			; end
-			; push q on the closed list
-		; end
-		
-		
 	(let* ((node (make-node :state (problem-initial-state problem) :g 0))
 		 (closedlist nil)
 		 (openlist (list node))
@@ -212,7 +187,7 @@
 					)
 				)
 
-			)	
+			)
 		)
 	)
 )
@@ -264,4 +239,125 @@
       (setf node (node-parent node)))
     (values seq-states)
 	)
+)
+
+(defun compute-heuristic (st)
+	(let ((env (heuristic-env (state-track st))))
+		(nth (second (state-pos st)) (nth (first (state-pos st)) env ))
+	)
+)
+ 
+(defun heuristic-env (track)
+	(let* ((env (make-list (first (track-size track))))
+
+			(y 0)
+			(hval 1)
+			(currentpos (track-endpositions track)))
+			(dolist (x env)
+				(setf (nth y env) (setf x (make-list (second (track-size track)))))
+				(incf y)
+			)
+			(dolist (pos currentpos)
+				(setf (nth (pos-c pos) (nth (pos-l pos) env)) 0)
+			)
+			(setf currentpos (discardPos(nextPositions currentpos) track env))
+
+			(block discloop
+				(loop 
+					(when (equal currentpos nil) (return-from discloop))
+					(dolist (p currentpos)
+						(setf (nth (pos-c p) (nth (pos-l p) env)) hval)
+					)
+					(incf hval)
+					(setf currentpos (discardPos(nextPositions currentpos) track env))
+				)
+			)
+	env)
+)
+
+;; Solution of phase 2
+
+;;; Pedir 
+(defun nextPositions (positions)
+  "generate all possible next states"
+	(let ((successors nil))
+		(dolist (pos positions)
+			(dolist (act (possible-actions) successors)
+				(let ((new-pos (make-pos (+ (pos-l pos) (acce-l act))(+ (pos-c pos) (acce-c act)))))
+			(if (not (member new-pos successors :test #'equalp))
+				(push new-pos successors))))
+		)
+	successors)
+)
+
+(defun discardPos (positions tr myenv)
+	(let ((adj nil))
+		(dolist (p positions)
+			(cond ((and (not(isObstaclep p tr))(not (numberp (nth (second p) (nth (first p) myenv)))))
+						(setf adj (append (list p) adj)))
+			)
+		)
+	adj)
+)
+
+(defun discardedList (positions)
+	(let ((nextDisc nil))
+		(dolist (p positions)
+			(if (not (member p nextDisc))
+					(setf nextDisc (append nextDisc (list p)))
+			)
+		)
+	nextDisc)
+)
+
+(defun best-search (problem)
+	(let* ((node (make-node :state (problem-initial-state problem) :g 0))
+			(closedlist nil)
+			(openlist (list node))
+			(generated nil)
+			(st (node-state node))
+			(globalenv (heuristic-env (state-track st))))
+
+	(block best-loop
+		(setf (node-h node) (nth (second (state-pos st)) (nth (first (state-pos st)) globalenv )))
+		(setf (node-f node) (node-h node))
+		(loop 
+			(when (equal openlist nil) (return-from best-loop nil))
+			(setf node (find-lowest-f openlist))
+			(setf openlist (remove node openlist))
+			(if (funcall (problem-fn-isGoal problem) (node-state node)) 
+				(return-from best-loop (solution node)))
+			(setf closedlist (append closedlist (list node)))
+			(setf generated (bestChilds node (funcall (problem-fn-nextStates problem) (node-state node)) problem globalenv))
+			(dolist (child generated)
+				;quando o estado do chlild nao esta na lista de abertos nem fechados adicionamos esse no na lista de abertos
+				(when (or (not (member (node-state child) (mapcar #'node-state openlist))) (not (member (node-state child) (mapcar #'node-state closedlist))))
+					(setf openlist (append (list child)  openlist))
+				)
+				(dolist (auxnode openlist) 
+					;se o estado de child ja estiver na lista de abertos com um f maior, entao substituimos esse no na lista de abertos pelo child
+					(when (and (eq (node-state child) (node-state auxnode)) (> (node-f auxnode) (node-f child)))
+						(progn (setf openlist (substitute child auxnode openlist))
+						)
+					)
+				)
+			)
+		)
+	)
+	)
+)
+
+(defun bestChilds (parent nodes problem globalenv)
+  (let ((retlist '())
+    (newnode nil)
+	(st nil))
+    (dolist (no nodes)
+		(setf newnode (make-node :parent parent :state no))
+		(setf st (node-state newnode))
+		(setf (node-h newnode) (nth (second (state-pos st)) (nth (first (state-pos st)) globalenv )))
+		(setf (node-g newnode) (+ (getCost (node-state newnode) problem) (node-g parent)))
+		(setf (node-f newnode) (+ (node-h newnode) (node-g newnode)))
+		(setf retlist (append retlist (list newnode)))
+	)
+  retlist)
 )

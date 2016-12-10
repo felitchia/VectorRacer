@@ -48,3 +48,34 @@
 	   (format t "Solution is correct? ~a~&" (string= (format nil "~{~a~^~}" (states-to-list (a* *p2*))) (read str))))
       (let ((real2 (get-internal-real-time)))
 	  (format t "Computation took: ~f seconds of real time~%" (/ (- real2 real1) internal-time-units-per-second))))
+
+(defvar *t3* nil)
+(defvar *p3* nil)
+
+(setf *t3* (loadtrack "my_track2.txt"))
+
+(format t "~%~%~&Exercise 4.1 - Heuristic~&")
+(list (compute-heuristic (initial-state *t3*)) (compute-heuristic (make-state :pos '(3 6)  :track track )) (compute-heuristic (make-state :pos '(3 8)  :track track )))
+ 
+ 
+;(setf *p3* (make-problem :initial-state (initial-state *t3*)  :fn-isGoal #'isGoalp	  :fn-nextstates #'nextStates	  :fn-h #'compute-heuristic))
+			  
+; (format t "~%~%~&Exercise 4.2 - A*~&")
+;  (let ((real1 (get-internal-real-time)))
+; 		(states-to-list (a* *p3*))
+;       (let ((real2 (get-internal-real-time)))
+; 	  (format t "Computation took: ~f seconds of real time~%" (/ (- real2 real1) internal-time-units-per-second))))
+
+(setf *p3* (make-problem :initial-state (initial-state *t3*)  :fn-isGoal #'isGoalp	  :fn-nextstates #'nextStates	  :fn-h #'compute-heuristic))
+			  
+(format t "~%~%~&Exercise 4.2 - A*~&")
+ (let ((real1 (get-internal-real-time)))
+		(states-to-list (a* *p3*))
+      (let ((real2 (get-internal-real-time)))
+	  (format t "Computation took: ~f seconds of real time~%" (/ (- real2 real1) internal-time-units-per-second))))
+	  
+(format t "~%~%~&Exercise 4.3 - BEST SEARCH~&")
+ (let ((real1 (get-internal-real-time)))
+		(states-to-list (best-search *p3*))
+      (let ((real2 (get-internal-real-time)))
+	  (format t "Computation took: ~f seconds of real time~%" (/ (- real2 real1) internal-time-units-per-second))))
